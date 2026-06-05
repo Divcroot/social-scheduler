@@ -1,11 +1,13 @@
 import { CalendarDaysIcon, LayoutDashboardIcon, LogInIcon, UserIcon, Wand2Icon } from "lucide-react"
-import { NavLink, useLocation } from "react-router-dom"
+import { NavLink, useLocation, useNavigate } from "react-router-dom"
 
 const Sidebar = ({isOpen, setIsOpen}: {isOpen: boolean, setIsOpen: (val: boolean) => void}) => {
 
+    const navigate = useNavigate();
+
     const {logout, user} = {
         logout: () => {
-            window.location.href = '/';
+            navigate('/');
         },
         user: {name: 'John Doe', email: 'johndoe@example.com'}
     }

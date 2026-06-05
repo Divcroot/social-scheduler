@@ -1,7 +1,7 @@
 
 const AIComposer = () => {
   return (
-    <div>AiComposer</div>
+    <div>Ai Composer</div>
   )
 }
 
