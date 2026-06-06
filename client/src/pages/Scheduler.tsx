@@ -127,7 +127,7 @@ const Scheduler = () => {
             </div>
 
             {/* Submit */}
-            <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-500 hover:bg-red-600 transition-all text-white rounded-lg">
+            <button type="submit" disabled={loading || selectedPlatforms.length === 0} className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-500 hover:bg-red-600 transition-all text-white rounded-lg">
               {loading ? (
                 <>
                   <div className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
