@@ -20,7 +20,7 @@ const AccountList = ({ accounts, onDisconnect }: AccountListProps) => {
         return (
             <div className="bg-white rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center py-20 px-6">
                 <div className="size-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
-                    <PlusIcon className="size-6 text-slate-500 opzcity-50" />
+                    <PlusIcon className="size-6 text-slate-500 opacity-50" />
                 </div>
 
                 <p className="text-slate-700 text-lg">No accounts connected</p>
@@ -31,13 +31,13 @@ const AccountList = ({ accounts, onDisconnect }: AccountListProps) => {
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {accounts.map((account, index) => {
+            {accounts.map((account) => {
                 const meta = PLATFORMS.find((p) => p.id === account.platform);
 
                 if (!meta) return;
 
                 return (
-                    <div key={index} className="group bg-white border-slate-200 rounded-2xl p-5 flex items-center gap-4 hover:border-slate-300 transition-all">
+                    <div key={account._id} className="group bg-white border border-slate-200 rounded-2xl p-5 flex items-center gap-4 hover:border-slate-300 transition-all">
                         <div className="size-12 bg-slate-50 rounded-xl flex items-center justify-center shrink-0">
                             <meta.icon className="size-6 text-slate-500" />
                         </div>

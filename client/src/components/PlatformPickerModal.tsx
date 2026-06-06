@@ -1,14 +1,14 @@
 import { CheckCircleIcon, ExternalLinkIcon, XIcon } from "lucide-react"
 import { PLATFORMS } from "../assets/assets"
 
-interface PlatformPickerModelProps {
+interface PlatformPickerModalProps {
     connectedIds: string[],
     connecting: string | null,
     onClose: () => void,
     onConnect: (platformId : string) => void
 }
 
-const PlatformPickerModel = ({connectedIds, connecting, onClose, onConnect} : PlatformPickerModelProps) => {
+const PlatformPickerModal = ({connectedIds, connecting, onClose, onConnect} : PlatformPickerModalProps) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-slate-100">
@@ -55,4 +55,4 @@ const PlatformPickerModel = ({connectedIds, connecting, onClose, onConnect} : Pl
   )
 }
 
-export default PlatformPickerModel
+export default PlatformPickerModal
