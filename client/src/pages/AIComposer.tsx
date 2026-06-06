@@ -37,7 +37,7 @@ const AIComposer = () => {
     setTimeout(() => {
       setScheduling(false);
       setActiveScheduler(null);
-      setSelectedPlatforms([""]);
+      setSelectedPlatforms([]);
       setScheduledDate('');
       setScheduledTime('');
     }, 2000)
@@ -49,7 +49,7 @@ const AIComposer = () => {
     <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-700">
       {/* Input Selection */}
       <div className="space-y-6 text-center mt-20">
-        <h1 className="text-3xl text-slate-700 tracking-tight">What should be we create today?</h1>
+        <h1 className="text-3xl text-slate-700 tracking-tight">What should we create today?</h1>
         <div className="relative group mt-12">
           <textarea placeholder="Share your idea... (e.g. A post about the launch of our new eco-friendly coffee beans)" value={prompt} onChange={(e) => setPrompt(e.target.value)} className="w-full px-6 py-6 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 outline-none focus:border-slate-400 transition resize-none h-40" />
 
@@ -162,7 +162,7 @@ const AIComposer = () => {
                     {PLATFORMS.map((p) => {
                       const active = selectedPlatforms.includes(p.id);
                       return (
-                        <button key={p.id} onClick={() => setSelectedPlatforms((prev) => (prev.includes(p.id) ? prev.filter((x) => x !== p.id) : [...prev, p.id]))} className={`p-2.5 runded-md border text-xs ${active ? 'bg-red-500/80 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}>
+                        <button key={p.id} onClick={() => setSelectedPlatforms((prev) => (prev.includes(p.id) ? prev.filter((x) => x !== p.id) : [...prev, p.id]))} className={`p-2.5 rounded-md border text-xs ${active ? 'bg-red-500/80 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}>
                           <p.icon className="size-4.5"/>
                         </button>
                       )
