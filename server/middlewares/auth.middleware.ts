@@ -19,7 +19,12 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
                 return res.status(401).json({ success: false, message: 'Unauthorized' });
             }
 
-            req.user = await User.findById(decoded._id).select('-password');
+            const user = await User.findById(decoded._id).select('-password');
+            if (!user) {
+                return res.status(401).json({ success: false, message: 'Unauthorized' });
+            }
+
+            req.user = user;
             next();
         } catch (error: any) {
             res.status(401).json({ success: false, message: error?.message || "Not authorized, token failed" });

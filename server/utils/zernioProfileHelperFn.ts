@@ -17,6 +17,9 @@ const getOrCreateZernioProfile = async (
     // Use existing profile if available
     if (profiles.length > 0) {
       const pid = profiles[0]._id || profiles[0].id;
+       if (!pid) {
+        throw new Error("Existing Zernio profile has no ID");
+       }
 
       await User.findByIdAndUpdate(user._id, {
         zernioProfileId: pid,

@@ -6,6 +6,6 @@ import { protect } from "../middlewares/auth.middleware.js";
 const socialAuthRouter = Router();
 
 socialAuthRouter.get('/:platform/url', protect, generateAuthUrl);
-socialAuthRouter.get('/sync', protect, syncAccounts);
+socialAuthRouter.post('/sync', protect, syncAccounts);
 
 export default socialAuthRouter;

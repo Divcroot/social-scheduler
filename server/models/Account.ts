@@ -7,7 +7,7 @@ export enum Platform {
     TWITTER = "twitter",
     FACEBOOK = "facebook",
     FACEBOOK_PAGE = "facebook_page",
-    LINKDIN_PAGE = "linkedin_page",
+    LINKEDIN_PAGE = "linkedin_page",
     INSTAGRAM_BUSINESS = "instagram_business"
 }
 
@@ -50,6 +50,7 @@ const accountSchema = new Schema<IAccount>({
     accessToken: {
         type: String,
         select: false,
+        required: true,
     },
     refreshToken: {
         type: String,

@@ -4,7 +4,7 @@ export interface IUser extends Document {
     name: string;
     email: string;
     password: string;
-    zernioProfileId: string;
+    zernioProfileId?: string;
     createdAt: Date;
     updatedAt: Date;
 

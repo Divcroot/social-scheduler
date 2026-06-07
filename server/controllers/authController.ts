@@ -78,6 +78,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
 
         if (!isPassword) {
             res.status(401).json({ success: false, message: "Invalid email or password" });
+            return;
         }
 
         const token = generateToken(user._id.toString());

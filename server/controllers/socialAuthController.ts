@@ -11,6 +11,9 @@ export const generateAuthUrl = async (req: AuthRequest, res: Response): Promise<
         const profileId = await getOrCreateZernioProfile(req.user);
 
         const origin = req.headers.origin;
+        if(!origin){
+            throw new Error("Missing origin header")
+        }
         const redirectUrl = `${origin}/accounts`;
 
         const result = await zernio.connect.getConnectUrl({
@@ -66,7 +69,7 @@ export const syncAccounts = async (req: AuthRequest, res: Response): Promise<voi
                 user: req.user._id,
                 platform: normalizedPlatform,
                 handle: zAccount.username || zAccount.name || zAccount.handle || 'Unknown',
-                zenrioAccountId: zid,
+                zernioAccountId: zid,
                 status: "connected",
                 avatarUrl: zAccount.avatarUrl || zAccount.picture || zAccount.profile_image_url,
             },
