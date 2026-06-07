@@ -1,19 +1,21 @@
 import { Request, Response, NextFunction } from "express";
 
 const errorHandler = (
-  err: any,
-  _req: Request,
-  res: Response,
-  _next: NextFunction
+    err: any,
+    _req: Request,
+    res: Response,
+    _next: NextFunction
 ) => {
-  console.error(err);
+    console.error(err);
 
-  const statusCode = err.statusCode || 500;
+    const rawStatus = Number(err?.statusCode);
+    const statusCode = Number.isInteger(rawStatus) && rawStatus >= 400 && rawStatus <= 599 ? rawStatus : 500;
 
-  res.status(statusCode).json({
-    success: false,
-    message: err.message || "Internal Server Error",
-  });
+    const isDev = process.env.NODE_ENV === "development";
+    res.status(statusCode).json({
+        success: false,
+        message: isDev ? (err?.message ?? "Internal Server Error") : "Internal Server Error",
+    });
 };
 
 export default errorHandler;
