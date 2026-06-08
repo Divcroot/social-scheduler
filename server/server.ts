@@ -30,8 +30,6 @@ app.use('/api/accounts', accountRouter);
 app.use('/api/posts', postRouter);
 app.use('/api/activity', activityRouter);
 
-initScheduler();
-
 //Global Error Handler
 app.use(errorHandler);
 
@@ -39,6 +37,9 @@ const startServer = async () => {
     try {
         //Database Connection
         await connectDB();
+
+        // Initialize scheduler after DB connection is established
+        initScheduler();
 
         app.listen(port, () => {
             console.log(`Server is running at http://localhost:${port}`);
