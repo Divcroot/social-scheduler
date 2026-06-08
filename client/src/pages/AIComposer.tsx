@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
-import { dummyGenerationData, PLATFORMS } from "../assets/assets";
+import { PLATFORMS } from "../assets/assets";
 import { ArrowRightIcon, CalendarIcon, ClockIcon, HistoryIcon, Loader2Icon, TimerIcon, Wand2Icon, XIcon } from "lucide-react";
+import api from "../api/axios";
+import toast from "react-hot-toast";
 
 const AIComposer = () => {
 
@@ -9,6 +11,7 @@ const AIComposer = () => {
   const [generateImage, setGenerateImage] = useState(true);
   const [loading, setLoading] = useState(false);
   const [generations, setGenerations] = useState<any[]>([]);
+  const [connectedPlatformIds, setConnectedPlatformIds] = useState<string[]>([]);
 
   //Scheduling State
   const [activeScheduler, setActiveScheduler] = useState<any>(null);
@@ -17,30 +20,115 @@ const AIComposer = () => {
   const [scheduledTime, setScheduledTime] = useState('');
   const [scheduling, setScheduling] = useState(false);
 
-  const fetchGenerations = async () => {
-    setGenerations(dummyGenerationData);
+  const fetchGenerations = async ({ silent }: { silent?: boolean } = {}) => {
+    try {
+      const { data } = await api.get('/api/posts/generations');
+      setGenerations(data);
+    } catch (error: any) {
+      if (!silent) {
+        toast.error(error.response?.data?.message || error?.message);
+      }
+    }
+  }
+
+  const fetchConnectedPlatforms = async ({ silent }: { silent?: boolean } = {}) => {
+    try {
+      const { data } = await api.get('/api/accounts');
+      setConnectedPlatformIds(data.filter((account: any) => account.status === "connected").map((account: any) => account.platform));
+    } catch (error: any) {
+      if (!silent) {
+        toast.error(error.response?.data?.message || error?.message)
+      }
+    }
   }
 
   useEffect(() => {
     fetchGenerations();
+    fetchConnectedPlatforms();
+
+    const interval = setInterval(() => {
+      fetchGenerations({ silent: true });
+      fetchConnectedPlatforms({ silent: true });
+    }, 10000);
+    return () => clearInterval(interval);
   }, [])
 
   const handleGenerate = async () => {
+    if (!prompt) {
+      toast.error("Please enter a prompt");
+      return;
+    }
+
     setLoading(true);
-    setTimeout(()=> {
+
+    try {
+      const { data } = await api.post("/api/posts/generate", {
+        prompt,
+        tone,
+        generateImage,
+      });
+
+      setGenerations([data, ...generations]);
+      setActiveScheduler(data);
+
+      toast.success("Content generated!");
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to generate content"
+      );
+    } finally {
       setLoading(false);
-    }, 2000)
+    }
   }
 
   const handleSchedule = async () => {
+    if (!activeScheduler) return;
+    if (selectedPlatforms.length === 0) {
+      toast.error("Select atleast one platform");
+      return;
+    }
+    if (!scheduledDate || !scheduledTime) {
+      toast.error("Select date and time");
+      return;
+    }
+    const invalidPlatforms = selectedPlatforms.filter((platform) => !connectedPlatformIds.includes(platform));
+    if (invalidPlatforms.length > 0) {
+      const names = invalidPlatforms
+        .map((platform) => PLATFORMS.find((p) => p.id === platform)?.name || platform)
+        .join(", ");
+      toast.error(`Connect ${names} before scheduling`);
+      return;
+    }
+
+    if (selectedPlatforms.includes("instagram") && !activeScheduler.mediaUrl) {
+      toast.error("Instagram requires an image or video");
+      return;
+    }
+
+    const scheduledFor = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
     setScheduling(true);
-    setTimeout(() => {
-      setScheduling(false);
+
+    try {
+      await api.post('/api/posts', {
+        content: activeScheduler.content,
+        mediaUrl: activeScheduler.mediaUrl,
+        mediaType: activeScheduler.mediaType,
+        platforms: selectedPlatforms,
+        scheduledFor,
+        status: 'scheduled',
+      });
+      toast.success("AI Post scheduled!");
       setActiveScheduler(null);
       setSelectedPlatforms([]);
-      setScheduledDate('');
-      setScheduledTime('');
-    }, 2000)
+      setScheduledDate("");
+      setScheduledTime("");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to schedule')
+    } finally {
+      setScheduling(false);
+    }
   }
 
   const tones = ['Professional', 'Creative', 'Funny', 'Minimalist', 'Excited'];
@@ -57,20 +145,20 @@ const AIComposer = () => {
             <button onClick={() => setGenerateImage(!generateImage)} className="flex items-center gap-3 bg-red-50 py-2 px-3 rounded-lg">
               <span>AI Image</span>
               <div className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${generateImage ? 'bg-red-500' : 'bg-slate-200'}`}>
-                <span className={`pointer-events-none size-4 transform translate-y-0.5 rounded-full bg-white transition ${generateImage ? 'translate-x-4.5' : 'translate-x-0.5'}`}/>
+                <span className={`pointer-events-none size-4 transform translate-y-0.5 rounded-full bg-white transition ${generateImage ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
               </div>
             </button>
 
             <button disabled={loading || prompt.length === 0} onClick={handleGenerate} className="bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-2 px-4 py-2 rounded-lg">
               {loading ? (
                 <>
-                <Loader2Icon className="size-4 animate-spin"/>
-                <span>Generating...</span>
+                  <Loader2Icon className="size-4 animate-spin" />
+                  <span>Generating...</span>
                 </>
               ) : (
                 <>
-                Generate
-                <ArrowRightIcon className="size-4"/>
+                  Generate
+                  <ArrowRightIcon className="size-4" />
                 </>
               )}
             </button>
@@ -78,11 +166,11 @@ const AIComposer = () => {
         </div>
 
         <div className="flex flex-wrap justify-center gap-2">
-              {tones.map((t) => (
-                <button key={t} onClick={() => setTone(t)} className={`px-4 py-1.5 rounded-full text-sm transition-all border ${t === tone ? 'bg-red-500 border-red-500' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>
-                  {t}
-                </button>
-              ))}
+          {tones.map((t) => (
+            <button key={t} onClick={() => setTone(t)} className={`px-4 py-1.5 rounded-full text-sm transition-all border ${t === tone ? 'bg-red-500 border-red-500' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}>
+              {t}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -90,7 +178,7 @@ const AIComposer = () => {
       <div className="space-y-6 pt-12 border-t border-slate-100">
         <div className="flex items-center justify-between text-slate-600">
           <div className="flex items-center gap-2">
-            <HistoryIcon className="size-5"/>
+            <HistoryIcon className="size-5" />
             <h2 className="text-xl">Recent Generations</h2>
           </div>
           <span className="text-sm text-slate-500 bg-slate-50 px-2">{generations.length} total</span>
@@ -109,7 +197,7 @@ const AIComposer = () => {
 
                 {gen.mediaUrl && (
                   <div className="rounded-xl overflow-hidden border border-slate-50 bg-slate-50">
-                    <img src={gen.mediaUrl} alt="Gen" className="w-full aspect-video object-cover opacity-90 group-hover:opacity-100 transition-opacity"/>
+                    <img src={gen.mediaUrl} alt="Gen" className="w-full aspect-video object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
                   </div>
                 )}
 
@@ -123,14 +211,14 @@ const AIComposer = () => {
           {generations.length === 0 && (
             <div className="col-span-full py-20 text-center space-y-2">
               <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto text-slate-300">
-                <Wand2Icon className="size-6"/>
+                <Wand2Icon className="size-6" />
               </div>
               <p className="text-slate-400 text-sm">No content generated yet. Try generating some content using the AI.</p>
             </div>
           )}
         </div>
       </div>
-      
+
 
       {/* Schedular Model */}
       {activeScheduler && (
@@ -139,7 +227,7 @@ const AIComposer = () => {
 
             <div className="flex items-center justify-between px-8 py-4 border-b border-slate-100 bg-slate-50/30">
               <h3 className="text-slate-900">Schedule Generation</h3>
-              <button onClick={() => setActiveScheduler(null)} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors"><XIcon className="size-5"/></button>
+              <button onClick={() => setActiveScheduler(null)} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors"><XIcon className="size-5" /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 space-y-4">
@@ -149,7 +237,7 @@ const AIComposer = () => {
 
               <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-4 ">
                 <p className="text-slate-800 text-sm leading-relaxed whitespace-pre-wrap">{activeScheduler.content}</p>
-                {activeScheduler.mediaUrl && <img src={activeScheduler.mediaUrl} alt="preview" className="w-full aspect-video object-cover rounded-xl border border-slate-200 shadow-sm"/>}
+                {activeScheduler.mediaUrl && <img src={activeScheduler.mediaUrl} alt="preview" className="w-full aspect-video object-cover rounded-xl border border-slate-200 shadow-sm" />}
               </div>
             </div>
 
@@ -163,7 +251,7 @@ const AIComposer = () => {
                       const active = selectedPlatforms.includes(p.id);
                       return (
                         <button key={p.id} onClick={() => setSelectedPlatforms((prev) => (prev.includes(p.id) ? prev.filter((x) => x !== p.id) : [...prev, p.id]))} className={`p-2.5 rounded-md border text-xs ${active ? 'bg-red-500/80 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}>
-                          <p.icon className="size-4.5"/>
+                          <p.icon className="size-4.5" />
                         </button>
                       )
                     })}
@@ -172,19 +260,19 @@ const AIComposer = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2">
                   <div className="relative">
-                    <CalendarIcon className="size-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"/>
-                    <input type="date" className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md text-slate-900 text-sm focus:outline-none transition-all" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)}/>
+                    <CalendarIcon className="size-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input type="date" className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md text-slate-900 text-sm focus:outline-none transition-all" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} />
                   </div>
 
-                   <div className="relative">
-                    <ClockIcon className="size-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"/>
-                    <input type="time" className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md text-slate-900 text-sm focus:outline-none transition-all" value={scheduledTime} onChange={(e) => setScheduledTime(e.target.value)}/>
+                  <div className="relative">
+                    <ClockIcon className="size-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input type="time" className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md text-slate-900 text-sm focus:outline-none transition-all" value={scheduledTime} onChange={(e) => setScheduledTime(e.target.value)} />
                   </div>
                 </div>
               </div>
 
               <button disabled={scheduling || selectedPlatforms.length === 0} onClick={handleSchedule} className="w-full flex items-center justify-center gap-2 py-3 rounded-md bg-slate-200 text-slate-700 hover:bg-red-500 hover:text-white transition">
-                {scheduling ? <Loader2Icon className="size-4 animate-spin"/> : <TimerIcon className="size-4"/>}
+                {scheduling ? <Loader2Icon className="size-4 animate-spin" /> : <TimerIcon className="size-4" />}
                 Schedule Post
               </button>
             </div>
