@@ -9,6 +9,8 @@ import authRouter from './routes/authRoutes.js';
 import socialAuthRouter from './routes/socialAuthRoutes.js';
 import accountRouter from './routes/accountRoutes.js';
 import postRouter from './routes/postRoutes.js';
+import activityRouter from './routes/activityRoutes.js';
+import { initScheduler } from './utils/schedulerService.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,6 +28,9 @@ app.use('/api/auth', authRouter);
 app.use('/api/oauth', socialAuthRouter);
 app.use('/api/accounts', accountRouter);
 app.use('/api/posts', postRouter);
+app.use('/api/activity', activityRouter);
+
+initScheduler();
 
 //Global Error Handler
 app.use(errorHandler);
