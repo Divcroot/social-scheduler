@@ -15,21 +15,25 @@ const Scheduler = () => {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchPosts = async () => {
+  const fetchPosts = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
       const { data } = await api.get('/api/posts');
       setPosts(data);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || error?.message)
+      if (!silent) {
+        toast.error(error.response?.data?.message || error?.message)
+      }
     }
   }
 
-  const fetchConnectedPlatforms = async () => {
+  const fetchConnectedPlatforms = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
       const { data } = await api.get('/api/accounts');
-      setConnectedPlatformIds(data.map((account: any) => account.platform));
+      setConnectedPlatformIds(data.filter((account: any) => account.status === "connected").map((account: any) => account.platform));
     } catch (error: any) {
-      toast.error(error.response?.data?.message || error?.message)
+      if (!silent) {
+        toast.error(error.response?.data?.message || error?.message)
+      }
     }
   }
 
@@ -38,8 +42,8 @@ const Scheduler = () => {
     fetchConnectedPlatforms();
 
     const interval = setInterval(() => {
-      fetchPosts();
-      fetchConnectedPlatforms();
+      fetchPosts({ silent: true });
+      fetchConnectedPlatforms({ silent: true });
     }, 10000);
     return () => clearInterval(interval);
   }, [])
@@ -53,17 +57,17 @@ const Scheduler = () => {
 
   const handleSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if(selectedPlatforms.length === 0){
+    if (selectedPlatforms.length === 0) {
       toast.error("Select atleast one platform");
       return;
     }
-    if(!scheduledDate || !scheduledTime){
+    if (!scheduledDate || !scheduledTime) {
       toast.error("Select date and time");
       return;
     }
 
     const invalidPlatforms = selectedPlatforms.filter((platform) => !connectedPlatformIds.includes(platform));
-    if(invalidPlatforms.length > 0){
+    if (invalidPlatforms.length > 0) {
       const names = invalidPlatforms
         .map((platform) => PLATFORMS.find((p) => p.id === platform)?.name || platform)
         .join(", ");
@@ -71,7 +75,7 @@ const Scheduler = () => {
       return;
     }
 
-    if(selectedPlatforms.includes('instagram') && !mediaFile){
+    if (selectedPlatforms.includes('instagram') && !mediaFile) {
       toast.error("Instagram requires a image or video");
       return;
     }
@@ -82,12 +86,12 @@ const Scheduler = () => {
     formData.append("scheduledFor", scheduledFor);
     formData.append("status", "scheduled");
     formData.append("platforms", JSON.stringify(selectedPlatforms));
-    if(mediaFile) formData.append("media", mediaFile);
+    if (mediaFile) formData.append("media", mediaFile);
 
     setLoading(true);
 
     try {
-      await api.post('/api/posts', formData, {headers: {"Content-Type": "multipart/form-data"}});
+      await api.post('/api/posts', formData, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Post scheduled");
       setContent("");
       setScheduledDate("");
@@ -97,7 +101,7 @@ const Scheduler = () => {
       fetchPosts();
     } catch (error: any) {
       toast.error(error.response?.data?.message || error?.message)
-    } finally{
+    } finally {
       setLoading(false);
     }
   }

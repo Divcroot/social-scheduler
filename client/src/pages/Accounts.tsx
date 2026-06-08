@@ -25,7 +25,9 @@ const Accounts = () => {
       const {data} = await api.get('/api/accounts');
       setAccounts(data); 
     } catch (error: any) {
-      toast.error(error.response?.data?.message || error?.message || 'Failed to load accounts');
+      const msg = error.response?.data?.message || error?.message || 'Failed to load accounts';
+      if (isSync) toast.error(msg, { id: "sync" });
+      else toast.error(msg);
     }
   };
 
@@ -44,7 +46,7 @@ const Accounts = () => {
       const handle = connectedUsername ? `(@${connectedUsername})` : "";
       fetchAccounts(true, connectedPlatform, `${label}${handle} connected!`);
     } else if(errorMsg){
-      toast.error(`Connection failed: ${decodeURIComponent(errorMsg)}`);
+      toast.error(`Connection failed: ${errorMsg}`);
       fetchAccounts();
     } else if(syncNeeded){
       fetchAccounts(true, null, "Accounts synced");

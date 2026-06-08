@@ -3,7 +3,7 @@ import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
 
 interface User {
-    _id: string;
+    id: string;
     name: string;
     email: string;
 }
@@ -19,21 +19,30 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{children: ReactNode}> = ({children}) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
 
-    useEffect(()=>{
+    useEffect(() => {
         const storedUser = localStorage.getItem('user');
         const storedToken = localStorage.getItem('token');
 
-        if(storedUser && storedToken){
-            setUser(JSON.parse(storedUser));
-            setToken(storedToken);
-            api.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+        try {
+            if (storedUser && storedToken) {
+                const parsedUser = JSON.parse(storedUser) as User;
+                setUser(parsedUser);
+                setToken(storedToken);
+                api.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+            }
+        } catch {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            delete api.defaults.headers.common["Authorization"];
+        } finally {
+            setIsLoading(false);
         }
 
         setIsLoading(false);
@@ -57,15 +66,15 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({children}) => {
     }
 
 
-    return <AuthContext.Provider value={{user, token, isLoading, login, logout, isAuthenticated: !!token}}>
+    return <AuthContext.Provider value={{ user, token, isLoading, login, logout, isAuthenticated: !!token }}>
         {children}
     </AuthContext.Provider>
 }
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    
-    if(context === undefined){
+
+    if (context === undefined) {
         throw new Error("useAuth must be used with an AuthProvider");
     }
 
