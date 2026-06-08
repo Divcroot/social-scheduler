@@ -13,9 +13,14 @@ export const generatePost = async (req: AuthRequest, res: Response): Promise<voi
     try {
         const { prompt, tone, generateImage } = req.body;
 
+        if (!prompt?.trim()) {
+            res.status(400).json({ success: false, message: "Prompt is required" });
+            return;
+        }
+
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
-            res.status(400).json({ success: false, message: "Google Gemini API Key is missing, Please add it in your .env file." })
+            res.status(500).json({ success: false, message: "Google Gemini API Key is missing, Please add it in your .env file." })
             return;
         }
 
@@ -81,12 +86,11 @@ export const generatePost = async (req: AuthRequest, res: Response): Promise<voi
                             status: leoError.response?.status,
                             error: leoError.response?.data,
                             message: leoError.message,
-                            config: leoError.config?.url
                         });
                         // Continue without image - don't throw
                     }
                 }
-            } catch (error : any) {
+            } catch (error: any) {
                 console.error("Image generation failed: ", error.response?.data || error.message);
             }
         }
@@ -104,27 +108,27 @@ export const generatePost = async (req: AuthRequest, res: Response): Promise<voi
         res.status(201).json(generation);
 
     } catch (error: any) {
-        res.status(500).json({message: error?.message || 'Server error'});
+        res.status(500).json({ message: error?.message || 'Server error' });
     }
 }
 
 //Get Generations
 export const getGenerations = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const generations = await Generation.find({user: req.user._id}).sort({createdAt: -1});
+        const generations = await Generation.find({ user: req.user._id }).sort({ createdAt: -1 });
         res.status(200).json(generations);
     } catch (error: any) {
-        res.status(500).json({message: error?.message || 'Server error'});
+        res.status(500).json({ message: error?.message || 'Server error' });
     }
 }
 
 //Get Posts
 export const getPosts = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const posts = await Post.find({user: req.user._id});
+        const posts = await Post.find({ user: req.user._id });
         res.status(200).json(posts);
     } catch (error: any) {
-        res.status(500).json({message: error?.message || 'Server error'});
+        res.status(500).json({ message: error?.message || 'Server error' });
     }
 }
 
@@ -133,9 +137,24 @@ export const schedulePost = async (req: AuthRequest, res: Response): Promise<voi
     try {
         const { content, platforms, scheduledFor, status } = req.body;
 
+         if (!content?.trim()) {
+            res.status(400).json({ message: "Content is required" });
+            return;
+         }
+
+          if (!platforms) {
+             res.status(400).json({ message: "Platforms are required" });
+             return;
+          }
+
+          if (!scheduledFor) {
+             res.status(400).json({ message: "Scheduled time is required" });
+             return ;
+          }
+
         //Parse platforms if it comes as a stringified array from formdata
         let parsedPlatforms = platforms;
-        if(typeof platforms === 'string'){
+        if (typeof platforms === 'string') {
             try {
                 parsedPlatforms = JSON.parse(platforms);
             } catch (error) {
@@ -146,17 +165,23 @@ export const schedulePost = async (req: AuthRequest, res: Response): Promise<voi
         let mediaUrl: string | undefined = req.body.mediaUrl;
         let mediaType: "image" | "video" = req.body.mediaType;
 
-        if(req.file){
+        if (req.file) {
             const result = await new Promise<any>((resolve, reject) => {
-                const stream = cloudinary.uploader.upload_stream({resource_type: "auto", folder: 'social-scheduler'}, (error, result) => {
-                    if(error) reject(error);
+                const stream = cloudinary.uploader.upload_stream({ resource_type: "auto", folder: 'social-scheduler' }, (error, result) => {
+                    if (error) reject(error);
                     else resolve(result);
                 });
                 stream.end(req.file!.buffer);
             });
 
             mediaUrl = result.secure_url;
-            mediaType = result.resource_type === 'video' ? 'video' : 'image';
+            if (result.resource_type === 'video') {
+                 mediaType = 'video';
+            } else if (result.resource_type === 'image') {
+                mediaType = 'image';
+            } else {
+                throw new Error(`Unsupported file type: ${result.resource_type}`);
+            }
         }
 
         const post = await Post.create({
@@ -171,6 +196,6 @@ export const schedulePost = async (req: AuthRequest, res: Response): Promise<voi
 
         res.status(201).json(post);
     } catch (error: any) {
-        res.status(500).json({message: error?.message || 'Server error'});
+        res.status(500).json({ message: error?.message || 'Server error' });
     }
 }

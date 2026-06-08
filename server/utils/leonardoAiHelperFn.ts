@@ -1,5 +1,12 @@
 import axios from "axios";
 
+class NonRetryableError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "NonRetryableError";
+    }
+}
+
 export const pollLeonardoJob = async (generationId : string, apiKey : string) : Promise<string> => {
     const maxRetries = 20;
     const delay = 5000;
@@ -18,13 +25,17 @@ export const pollLeonardoJob = async (generationId : string, apiKey : string) : 
                     return generation.generated_images[0].url
                 }
 
-                throw new Error("Generation complete but no images found.");
+                throw new NonRetryableError("Generation complete but no images found.");
             }
 
             if(generation.status === 'FAILED'){
-                throw new Error("Leonardo.ai generation failed.")
+                throw new NonRetryableError("Leonardo.ai generation failed.")
             }
         } catch (error : any) {
+            if (error instanceof NonRetryableError) {
+                throw error;
+            }
+
             console.error("Polling error: ", error?.response?.data || error.message);
         }
         

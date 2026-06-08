@@ -2,7 +2,8 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface IPost extends Document {
     user: Types.ObjectId;
-    prompt: string;
+    content: string;
+    prompt?: string;
     mediaUrl?: string;
     mediaType?: "image" | "video";
     platforms: ("twitter" | "linkedin" | "instagram" | 'facebook' | 'facebook_page' | 'instagram_business' | 'linkedin_page')[];
@@ -18,9 +19,12 @@ const postSchema = new Schema<IPost>({
         ref: "User",
         required: true,
     },
-    prompt: {
+    content: {
         type: String,
         required: true,
+    },
+    prompt: {
+        type: String,
     },
     mediaUrl: {
         type: String,
@@ -38,13 +42,25 @@ const postSchema = new Schema<IPost>({
     scheduledFor: {
         type: Date,
         required: true,
+        validate: {
+            validator: function(value: Date) {
+                return value > new Date();
+            },
+            message: 'scheduleFor must be a future date'
+        }
     },
     status: {
         type: String,
         enum: ["draft", "scheduled", "published", "failed"],
         default: "scheduled",
     },
-}, { timestamps: true });
+}, {
+    timestamps: true,
+}).pre('save', function () {
+    if (!this.platforms?.length) {
+        throw new Error('At least one platform must be specified');
+    }
+});
 
 const Post = mongoose.models.Post || mongoose.model<IPost>("Post", postSchema);
 
