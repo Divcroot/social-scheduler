@@ -21,6 +21,8 @@ export const initScheduler = () => {
 
                     if(accounts.length === 0){
                         console.log(`No connected Zernio accounts found for post ${post._id}`);
+                        post.status = "failed";
+                        await post.save({ validateBeforeSave: false });
                         continue
                     }
 
@@ -51,7 +53,7 @@ export const initScheduler = () => {
                     console.log(`Zernio post created: ${publishedPost._id || publishedPost.id}`);
 
                     post.status = "published";
-                    await post.save();
+                    await post.save({ validateBeforeSave: false });
 
                     await ActivityLog.create({
                         user: post.user,
@@ -62,7 +64,7 @@ export const initScheduler = () => {
                 } catch (error: any) {
                     console.error(`Failed to publish post ${post._id} :`, error?.response?.data || error?.message);
                     post.status = "failed";
-                    await post.save();
+                    await post.save({ validateBeforeSave: false });
                 }
             }
             if(postsToPublish.length > 0){

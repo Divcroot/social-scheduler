@@ -57,17 +57,27 @@ export const generatePost = async (req: AuthRequest, res: Response): Promise<voi
                 if (leonardoKey) {
                     try {
                         const payload = {
-                            prompt: imagePrompt
+                            "public": false,
+                            "model": "gpt-image-2",
+                            "parameters": {
+                                "quality": "HIGH",
+                                "prompt": imagePrompt,
+                                "quantity": 1,
+                                "width": 1024,
+                                "height": 1024,
+                                "prompt_enchance": "ON"
+                            }
                         };
 
                         const leoResponse = await axios.post("https://cloud.leonardo.ai/api/rest/v1/generations", payload, {
                             headers: {
                                 accept: "application/json",
                                 authorization: `Bearer ${leonardoKey}`,
+                                "content-type": "application/json"
                             },
                         })
 
-                        const generationId = leoResponse.data?.sdGenerationJob?.generationId || leoResponse.data?.generationId;
+                        const generationId = leoResponse.data.generate.generationId;
                         if (!generationId) {
                             console.log("Full response received:", leoResponse.data);
                             throw new Error("No generation ID received from Leonardo.ai. Full response: " + JSON.stringify(leoResponse.data));

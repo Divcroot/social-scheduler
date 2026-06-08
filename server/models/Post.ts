@@ -39,20 +39,24 @@ const postSchema = new Schema<IPost>({
             enum: ["twitter", "linkedin", "instagram", 'facebook', 'facebook_page', 'instagram_business', 'linkedin_page'],
         },
     ],
-    scheduledFor: {
-        type: Date,
-        required: true,
-        validate: {
-            validator: function(value: Date) {
-                return value > new Date();
-            },
-            message: 'scheduleFor must be a future date'
-        }
-    },
     status: {
         type: String,
         enum: ["draft", "scheduled", "published", "failed"],
         default: "scheduled",
+    },
+    scheduledFor: {
+        type: Date,
+        required: true,
+        validate: {
+            validator: function (this: any, value: Date) {
+                // Only require a future scheduled date when the post is still scheduled.
+                if (this.status !== 'scheduled') {
+                    return true;
+                }
+                return value > new Date();
+            },
+            message: 'scheduleFor must be a future date'
+        }
     },
 }, {
     timestamps: true,

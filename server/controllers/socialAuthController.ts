@@ -25,8 +25,7 @@ export const generateAuthUrl = async (req: AuthRequest, res: Response): Promise<
         })
 
         const data = result.data as any;
-        console.log("getConnectUrl response: ", JSON.stringify(data, null, 2));
-
+        
         const authUrl = data.authUrl;
         if (!authUrl) {
             throw new Error(`Zernio returned no authUrl. Full response: ${JSON.stringify(data)}`);
