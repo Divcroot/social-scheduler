@@ -1,4 +1,5 @@
-import multer from 'multer';
+import multer, { FileFilterCallback } from 'multer';
+import { Request } from 'express';
 
 const storage = multer.memoryStorage();
 
@@ -12,11 +13,11 @@ const allowedMimeTypes = [
 ];
 
 export const upload = multer({
-    storage: storage,
+    storage,
     limits: {
         fileSize: 10 * 1024 * 1024 // 10 MB
     },
-    fileFilter: (req, file, cb) => {
+    fileFilter: (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
         if (allowedMimeTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
