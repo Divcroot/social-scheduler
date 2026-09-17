@@ -1,5 +1,5 @@
 import { CalendarDaysIcon, LayoutDashboardIcon, LogInIcon, UserIcon, Wand2Icon } from "lucide-react"
-import { NavLink, useLocation, useNavigate } from "react-router-dom"
+import { NavLink, useLocation } from "react-router-dom"
 import { useAuth } from "../context/AuthContext";
 
 const Sidebar = ({isOpen, setIsOpen}: {isOpen: boolean, setIsOpen: (val: boolean) => void}) => {
